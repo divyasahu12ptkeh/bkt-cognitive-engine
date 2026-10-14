@@ -68,10 +68,10 @@
     });
 
     async function submitAttempt(isCorrect) {
-      const res = await fetch('/api/attempt', {
+      const res = await fetch('http://localhost:8000/api/attempt', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ user_id: 'tester', concept_id: 'bayes_101', correct: isCorrect })
+        body: JSON.stringify({ user_id: 'tester', concept_id: 'bayes_101', is_correct: isCorrect })
       });
       const data = await res.json();
       document.getElementById('masteryVal').innerText = data.mastery_probability;
@@ -92,7 +92,7 @@
 
     async function timeWarp(mins) {
       document.getElementById('warpLabel').innerText = `${mins} min`;
-      const res = await fetch('/api/time-travel', {
+      const res = await fetch('http://localhost:8000/api/time-travel', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ user_id: 'tester', concept_id: 'bayes_101', minutes_forward: parseFloat(mins) })
