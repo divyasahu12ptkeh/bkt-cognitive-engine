@@ -82,3 +82,53 @@ def simulate_stream(req: StreamSimulationRequest):
         "concept_id": req.concept_id,
         "stream": run_simulation(req.student_id, req.concept_id, req.total_questions, req.true_student_mastery)
     }
+from fastapi import Response
+
+QUESTIONS_DB = [
+    {
+        "id": "q1",
+        "concept_id": "bayes_theorem",
+        "prompt": "What does P(A|B) represent in Bayes' Theorem?",
+        "options": [
+            "Probability of A given B has occurred",
+            "Probability of B given A has occurred",
+            "Joint probability of A and B",
+            "Prior probability of A"
+        ],
+        "correct_index": 0
+    },
+    {
+        "id": "q2",
+        "concept_id": "bayes_theorem",
+        "prompt": "If a student truly knows a topic, making an error is modeled by which parameter?",
+        "options": ["Guess (P_G)", "Slip (P_S)", "Transition (P_T)", "Prior (P_L0)"],
+        "correct_index": 1
+    }
+]
+
+@app.get("/api/questions")
+def get_questions(concept_id: str = "bayes_theorem"):
+    return [q for q in QUESTIONS_DB if q["concept_id"] == concept_id]
+
+@app.get("/api/schedule/export.ics")
+def export_calendar(student_id: str = "student_1", concept_id: str = "bayes_theorem"):
+    state = state_manager.get_or_create(student_id, concept_id)
+    forget_time = state["last_updated"] + timedelta(minutes=state["stability"])
+    start_str = forget_time.strftime("%Y%m%dT%H%M%SZ")
+    end_str = (forget_time + timedelta(minutes=5)).strftime("%Y%m%dT%H%M%SZ")
+    
+    ics_body = f"""BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//CognitiveEngine//EN
+BEGIN:VEVENT
+SUMMARY:Review Session: {concept_id.replace('_', ' ').title()}
+DESCRIPTION:Calculated memory threshold reached. Review now to reset retention curve.
+DTSTART:{start_str}
+DTEND:{end_str}
+END:VEVENT
+END:VCALENDAR"""
+    return Response(
+        content=ics_body,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f"attachment; filename=review_{concept_id}.ics"}
+    )
